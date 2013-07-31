@@ -48,6 +48,9 @@ class BlocksServiceProvider extends ServiceProvider {
 							if(is_callable($var)) {
 								$vars[$key] = call_user_func_array($var, array($route));
 							}
+							else {
+								$vars[$key] = $var;
+							}
 						}
 					}
 					$controller = $block['controller'];
