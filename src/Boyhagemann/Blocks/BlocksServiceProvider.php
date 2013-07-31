@@ -35,14 +35,27 @@ class BlocksServiceProvider extends ServiceProvider {
 				return;
 			}
 
-			foreach($routes[$path] as $section => $controllers) {
-				$blocks[$section] = '';
-				foreach($controllers as $controller) {
-					$blocks[$section] .= Layout::dispatch($controller);
+
+			$vars = $route->getParametersWithoutDefaults();
+
+			foreach($routes[$path] as $section => $blocks) {
+				$content[$section] = '';
+				foreach($blocks as $block) {
+
+					if(isset($block['vars'])) {
+						foreach($block['vars'] as $key => $var) {
+
+							if(is_callable($var)) {
+								$vars[$key] = call_user_func_array($var, array($route));
+							}
+						}
+					}
+					$controller = $block['controller'];
+					$content[$section] .= Layout::dispatch($controller, $vars);
 				}
 			}
 
-			return View::make('layouts.default', $blocks);
+			return View::make('layouts.default', $content);
 		});
 
 		Route::when('*', 'blocks');
