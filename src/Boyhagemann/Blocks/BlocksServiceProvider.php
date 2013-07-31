@@ -42,14 +42,14 @@ class BlocksServiceProvider extends ServiceProvider {
 				$content[$section] = '';
 				foreach($blocks as $block) {
 
-					if(isset($block['vars'])) {
-						foreach($block['vars'] as $key => $var) {
+					if(isset($block['params'])) {
+						foreach($block['params'] as $key => $param) {
 
-							if(is_callable($var)) {
-								$vars[$key] = call_user_func_array($var, array($route));
+							if(is_callable($param)) {
+								$vars[$key] = call_user_func_array($param, array($route));
 							}
 							else {
-								$vars[$key] = $var;
+								$vars[$key] = $param;
 							}
 						}
 					}
