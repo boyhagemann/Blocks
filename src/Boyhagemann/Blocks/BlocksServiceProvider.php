@@ -53,6 +53,19 @@ class BlocksServiceProvider extends ServiceProvider {
 							}
 						}
 					}
+
+
+					if(isset($block['matchRouteParams'])) {
+						foreach($block['matchRouteParams'] as $key => $param) {
+
+							if(!$route->getParameter($param)) {
+								throw new \Exception(sprintf('The route does not have the param "%s"', $param));
+							}
+
+							$vars[$key] = $route->getParameter($param);
+						}
+					}
+
 					$controller = $block['controller'];
 					$content[$section] .= Layout::dispatch($controller, $vars);
 				}
