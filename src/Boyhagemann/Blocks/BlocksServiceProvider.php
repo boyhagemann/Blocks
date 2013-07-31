@@ -1,90 +1,103 @@
-<?php namespace Boyhagemann\Blocks;
+<?php
+
+namespace Boyhagemann\Blocks;
 
 use Illuminate\Support\ServiceProvider;
+use Config,
+    Route,
+    View,
+    Layout;
 
-use Config, Route, View, Layout;
+class BlocksServiceProvider extends ServiceProvider
+{
+    /**
+     * Indicates if loading of the provider is deferred.
+     *
+     * @var bool
+     */
+    protected $defer = false;
 
-class BlocksServiceProvider extends ServiceProvider {
+    /**
+     * Register the service provider.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        $this->package('blocks', 'blocks');
+    }
 
-	/**
-	 * Indicates if loading of the provider is deferred.
-	 *
-	 * @var bool
-	 */
-	protected $defer = false;
+    public function boot()
+    {
+        $routes = Config::get('blocks');
 
-	/**
-	 * Register the service provider.
-	 *
-	 * @return void
-	 */
-	public function register()
-	{
-		$this->package('blocks', 'blocks');
-	}
+        Route::filter('blocks', function($route) use ($routes) {
 
-	public function boot()
-	{
-		$routes = Config::get('blocks');
+            $path = $route->getPath();
 
-		Route::filter('blocks', function($route) use ($routes) {
+            if (!isset($routes[$path])) {
+                return;
+            }
 
-			$path = $route->getPath();
+            if (!isset($routes[$path]['layout'])) {
+                throw new \Exception(sprintf('The route does not have a layout'));
+            }
 
-			if(!isset($routes[$path])) {
-				return;
-			}
-
-
-			$vars = $route->getParametersWithoutDefaults();
-
-			foreach($routes[$path] as $section => $blocks) {
-				$content[$section] = '';
-				foreach($blocks as $block) {
-
-					if(isset($block['params'])) {
-						foreach($block['params'] as $key => $param) {
-
-							if(is_callable($param)) {
-								$vars[$key] = call_user_func_array($param, array($route));
-							}
-							else {
-								$vars[$key] = $param;
-							}
-						}
-					}
+            $vars = $route->getParametersWithoutDefaults();
+            $layout = $routes[$path]['layout'];
 
 
-					if(isset($block['matchRouteParams'])) {
-						foreach($block['matchRouteParams'] as $key => $param) {
+            if (!isset($routes[$path]['sections'])) {
+                return;
+            }
 
-							if(!$route->getParameter($param)) {
-								throw new \Exception(sprintf('The route does not have the param "%s"', $param));
-							}
+            foreach ($routes[$path]['sections'] as $section => $blocks) {
+                
+                $content[$section] = '';
+                
+                foreach ($blocks as $block) {
 
-							$vars[$key] = $route->getParameter($param);
-						}
-					}
+                    if (isset($block['params'])) {
+                        foreach ($block['params'] as $key => $param) {
 
-					$controller = $block['controller'];
-					$content[$section] .= Layout::dispatch($controller, $vars);
-				}
-			}
+                            if (is_callable($param)) {
+                                $vars[$key] = call_user_func_array($param, array($route));
+                            }
+                            else {
+                                $vars[$key] = $param;
+                            }
+                        }
+                    }
 
-			return View::make('layouts.default', $content);
-		});
+                    if (isset($block['matchRouteParams'])) {
+                        foreach ($block['matchRouteParams'] as $key => $param) {
 
-		Route::when('*', 'blocks');
-	}
+                            if (!$route->getParameter($param)) {
+                                throw new \Exception(sprintf('The route does not have the param "%s"', $param));
+                            }
 
-	/**
-	 * Get the services provided by the provider.
-	 *
-	 * @return array
-	 */
-	public function provides()
-	{
-		return array();
-	}
+                            $vars[$key] = $route->getParameter($param);
+                        }
+                    }
+
+                    $content[$section] .= Layout::dispatch($block['controller'], $vars);
+                }
+            }
+
+            return View::make($layout, $content);
+        });
+
+        Route::when('*', 'blocks');
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return array();
+    }
 
 }
