@@ -6,7 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Config,
     Route,
     View,
-    Layout;
+    App;
 
 class BlocksServiceProvider extends ServiceProvider
 {
@@ -30,7 +30,6 @@ class BlocksServiceProvider extends ServiceProvider
     public function boot()
     {
         $routes = Config::get('blocks');
-
         Route::filter('blocks', function($route) use ($routes) {
 
             $path = $route->getPath();
@@ -43,14 +42,21 @@ class BlocksServiceProvider extends ServiceProvider
                 throw new \Exception(sprintf('The route does not have a layout'));
             }
 
-            $vars = $route->getParametersWithoutDefaults();
-            $layout = $routes[$path]['layout'];
-
-
             if (!isset($routes[$path]['sections'])) {
                 return;
             }
 
+            $vars = $route->getParametersWithoutDefaults();
+            $layoutName = $routes[$path]['layout'];
+            $layout = \Pages\Layout::whereName($layoutName)->with('sections')->first();
+            
+            // Fill each section with blank content
+            $content = array();
+            foreach($layout->sections as $section) {
+                $content[$section->name] = '';
+            }
+
+            // Add content to each section
             foreach ($routes[$path]['sections'] as $section => $blocks) {
                 
                 $content[$section] = '';
@@ -79,12 +85,12 @@ class BlocksServiceProvider extends ServiceProvider
                             $vars[$key] = $route->getParameter($param);
                         }
                     }
-
-                    $content[$section] .= Layout::dispatch($block['controller'], $vars);
+                    
+                    $content[$section] .= App::make('DeSmart\Layout\Layout')->dispatch($block['controller'], $vars);
                 }
             }
 
-            return View::make($layout, $content);
+            return View::make($layoutName, $content);
         });
 
         Route::when('*', 'blocks');
