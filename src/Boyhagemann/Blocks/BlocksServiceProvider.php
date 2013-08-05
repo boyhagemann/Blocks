@@ -29,9 +29,9 @@ class BlocksServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        $routes = Config::get('blocks');
-        Route::filter('blocks', function($route) use ($routes) {
+        Route::filter('blocks', function($route) {
 
+            $routes = Config::get('blocks');
             $path = $route->getPath();
 
             if (!isset($routes[$path])) {
