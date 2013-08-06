@@ -46,15 +46,7 @@ class BlocksServiceProvider extends ServiceProvider
                 return;
             }
 
-            $vars = $route->getParametersWithoutDefaults();
             $layoutName = $routes[$path]['layout'];
-            $layout = \Pages\Layout::whereName($layoutName)->with('sections')->first();
-            
-            // Fill each section with blank content
-            $content = array();
-            foreach($layout->sections as $section) {
-                $content[$section->name] = '';
-            }
 
             // Add content to each section
             foreach ($routes[$path]['sections'] as $section => $blocks) {
@@ -63,6 +55,8 @@ class BlocksServiceProvider extends ServiceProvider
                 
                 foreach ($blocks as $block) {
 
+                    $vars = $route->getParametersWithoutDefaults();
+            
                     if (isset($block['params'])) {
                         foreach ($block['params'] as $key => $param) {
 
@@ -75,8 +69,8 @@ class BlocksServiceProvider extends ServiceProvider
                         }
                     }
 
-                    if (isset($block['matchRouteParams'])) {
-                        foreach ($block['matchRouteParams'] as $key => $param) {
+                    if (isset($block['match'])) {
+                        foreach ($block['match'] as $key => $param) {
 
                             if (!$route->getParameter($param)) {
                                 throw new \Exception(sprintf('The route does not have the param "%s"', $param));
