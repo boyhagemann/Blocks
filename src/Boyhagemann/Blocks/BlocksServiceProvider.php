@@ -87,7 +87,6 @@ class BlocksServiceProvider extends ServiceProvider
             return View::make($layoutName, $content);
         });
 
-        Route::when('*', 'blocks');
     }
 
     /**
