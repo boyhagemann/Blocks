@@ -79,7 +79,7 @@ class BlocksServiceProvider extends ServiceProvider
                             $vars[$key] = $route->getParameter($param);
                         }
                     }
-                    
+
                     $content[$section] .= App::make('DeSmart\Layout\Layout')->dispatch($block['controller'], $vars);
                 }
             }
